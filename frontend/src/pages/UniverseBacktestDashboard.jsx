@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { BarChart3, TrendingUp, Award, DollarSign, Play, Settings, Loader2, AlertCircle, TrendingDown, Target } from 'lucide-react';
 
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://127.0.0.1:8000";
+
 const UniverseBacktestDashboard = () => {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState(null);
@@ -19,7 +23,7 @@ const UniverseBacktestDashboard = () => {
     setResults(null);
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/backtest/universe', {
+      const response = await fetch(`${API_URL}/backtest/universe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)

@@ -21,7 +21,12 @@ const ScreeningResults = ({ onSelectStock }) => {
         criteria: 'ema_crossover'
       };
       const data = await api.screenUniverse(config);
-      setResults(data);
+      console.log("SCREENING RESPONSE");
+      console.log(data);
+      console.log("Timestamp:", data.timestamp);
+      console.log("==================");
+
+setResults(data);
     } catch (error) {
       console.error('Error screening universe:', error);
     } finally {

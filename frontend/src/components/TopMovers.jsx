@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
-
+import api from "../api/api";
 const TopMovers = () => {
   const [movers, setMovers] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -11,30 +11,24 @@ const TopMovers = () => {
   }, []);
 
   const loadMovers = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await fetch('http://127.0.0.1:8000/top-movers');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch movers');
-      }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setMovers(data);
-      }
-    } catch (err) {
-      console.error('Error loading movers:', err);
-      setError('Unable to load market movers. Please try again.');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+
+  try {
+    const data = await api.getTopMovers();
+
+    if (data.error) {
+      setError(data.error);
+    } else {
+      setMovers(data);
     }
-  };
+  } catch (err) {
+    console.error("Error loading movers:", err);
+    setError("Unable to load market movers. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) {
     return (
