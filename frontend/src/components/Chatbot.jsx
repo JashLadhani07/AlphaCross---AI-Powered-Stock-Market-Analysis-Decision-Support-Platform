@@ -37,13 +37,18 @@ const Chatbot = ({ symbol, predictionContext, apiBase }) => {
     setLoading(true);
 
     try {
-      // Prepare context with all available data
+      // Prepare context with all available data (technicals + news + explainability)
       const context = {
         prediction: predictionContext?.prediction || null,
         confidence: predictionContext?.confidence || null,
         ema20: predictionContext?.ema20 || null,
         ema50: predictionContext?.ema50 || null,
         rsi: predictionContext?.rsi || null,
+        sentiment: predictionContext?.sentiment || null,
+        news_summary: predictionContext?.news_summary || null,
+        news_risks: predictionContext?.news_risks || null,
+        top_factors: predictionContext?.top_factors || null,
+        backtest_win_rate: predictionContext?.backtest_win_rate ?? null,
       };
 
       // Prepare conversation history (last 10 messages)
@@ -114,8 +119,8 @@ const Chatbot = ({ symbol, predictionContext, apiBase }) => {
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white">AlphaCross AI</h3>
-                  <p className="text-xs text-blue-100">GPT-4-Turbo • Context-Aware</p>
+                  <h3 className="font-semibold text-white">AlphaCross AI Analyst</h3>
+                  <p className="text-xs text-blue-100">Context-Aware • News + Technicals</p>
                 </div>
               </div>
               <Sparkles className="w-5 h-5 text-yellow-300" />

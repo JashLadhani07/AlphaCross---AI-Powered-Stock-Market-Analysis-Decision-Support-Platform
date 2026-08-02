@@ -41,13 +41,14 @@ export const api = {
     }
   },
 
-  // Chat with AI
-  sendChatMessage: async (symbol, query, context) => {
+  // Chat with AI (optionally pass conversation history for multi-turn memory)
+  sendChatMessage: async (symbol, query, context, conversationHistory = []) => {
     try {
       const response = await axios.post(`${API_URL}/chat`, {
         symbol,
         query,
-        context
+        context,
+        conversation_history: conversationHistory
       });
       return response.data;
     } catch (error) {
@@ -175,6 +176,32 @@ export const api = {
     } catch (error) {
       console.error('Error running NSE 500 universe backtest:', error);
       throw error;
+    }
+  },
+
+  // =====================
+  // 🧠 NLP ADDITIONS
+  // =====================
+
+  // Get AI-generated News Intelligence briefing (headlines, sentiment, summary, risks)
+  getNewsIntelligence: async (symbol) => {
+    try {
+      const response = await axios.get(`${API_URL}/news/${symbol}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching news intelligence:', error);
+      // Return a safe default so the UI can render an "unavailable" state
+      return {
+        symbol,
+        available: false,
+        headlines: [],
+        sentiment: 'Neutral',
+        confidence: 0,
+        summary: '',
+        risks: [],
+        impact: '',
+        message: 'Unable to reach news service.'
+      };
     }
   }
 };

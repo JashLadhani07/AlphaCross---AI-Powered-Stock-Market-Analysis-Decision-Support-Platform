@@ -1,322 +1,490 @@
-# AlphaCross: AI-Powered Moving Average Crossover & Market Insight Platform
+# 📈 AlphaCross – AI-Powered Stock Market Analysis & Decision Support Platform
 
-A full-stack trading analytics platform for the **NSE 500** universe. It combines live YFinance market data, EMA-crossover signal detection, an XGBoost ML predictor, a full-universe screener, a portfolio-level backtester, and a GPT-4-Turbo trading assistant, all wrapped in a React dashboard.
+AlphaCross is an AI-powered stock analysis platform that combines **technical analysis, machine learning, explainable AI, financial news intelligence, NLP, and conversational AI** to help investors make more informed trading decisions.
 
----
-
-## Features
-
-- **NSE 500 Universe Screener** - scans up to all 500 Nifty 500 constituents in parallel and buckets them into Bullish / Bearish / Neutral based on EMA 20 vs EMA 50, with sector tagging and search.
-- **Hybrid NSE 500 Data Loader** - automatically downloads the latest official Nifty 500 constituent list with seamless fallback to a bundled local CSV, ensuring reliable production deployments while continuing to use live Yahoo Finance market data.
-- **Single-Stock Analysis** - live price, EMA 20/50, RSI, and an XGBoost-based crossover prediction with a confidence score.
-- **Single-Stock Backtest** - EMA-crossover strategy backtest with full trade logs (entry/exit price & date, P&L, win rate, risk-reward ratio, profit factor, max drawdown).
-- **Universe Backtest** - runs the crossover strategy across a configurable slice of the NSE 500 (max stocks, initial capital, position size %, stop loss %, take profit %) and returns portfolio-level metrics: total return, win rate, best/worst trade, top-performing sectors, and a ranked trade list.
-- **Top Movers** - daily gainers/losers across a curated liquid-stock basket.
-- **AI Chatbot** - GPT-4-Turbo (with GPT-3.5 and Gemini fallbacks, plus a fully offline rule-based fallback) that explains signals, answers "should I buy/sell" style questions with risk disclaimers, and remembers conversation context.
-- **AI Summaries & Sentiment** - auto-generated 2-line stock summaries and a sentiment endpoint (currently simulated, pluggable to a real news API).
+Unlike traditional crossover screeners, AlphaCross combines **historical price action**, **technical indicators**, **XGBoost predictions**, **SHAP explanations**, and **AI-generated market insights** into a single interactive dashboard supporting **500 NSE-listed companies**.
 
 ---
 
-## Live Demo
+## ✨ Features
 
-- **Frontend (Vercel):** https://alpha-cross-an-ai-powered-moving-av.vercel.app
-- **Backend (Render):** https://alphacross-ai-powered-moving-average.onrender.com
-
----
-
-## Intelligent Data Pipeline
-
-AlphaCross separates **market universe management** from **live market data**.
-
-**Universe Management**
-- Attempts to fetch the latest official Nifty 500 constituent list from Nifty Indices.
-- Automatically falls back to `backend/data/nifty500.csv` if the online source is unavailable.
-- Guarantees uninterrupted screening of all 500 constituents.
-
-**Live Market Data**
-- Uses Yahoo Finance (`yfinance`) for live OHLCV prices.
-- EMA, RSI, screening, ML predictions, and backtests always operate on current market data.
-
-This hybrid architecture provides production reliability without sacrificing live market data.
+### 📊 Technical Analysis
+- Live NSE stock analysis
+- EMA 20 & EMA 50 crossover strategy
+- RSI calculation
+- Price volatility analysis
+- Interactive stock charts
+- Technical trend summary
 
 ---
 
-## Project Structure
+### 🤖 Machine Learning Prediction
+
+Predict future stock movement using an **XGBoost classifier** trained on engineered technical features.
+
+Outputs:
+- Bullish
+- Bearish
+- Neutral
+
+Along with:
+- Prediction confidence
+- Technical indicators
+- Trading recommendation
+
+---
+
+### 🧠 Explainable AI (XAI)
+
+Predictions are no longer black boxes.
+
+AlphaCross uses **SHAP (SHapley Additive Explanations)** to identify which technical indicators contributed the most toward each prediction.
+
+Top contributing features include:
+
+- EMA 20
+- EMA 50
+- EMA Momentum
+- RSI
+- Returns
+- Volatility
+
+---
+
+### 📰 AI News Intelligence
+
+Every stock is analyzed using recent financial news.
+
+Pipeline:
+
+NewsData API
+→ Article Cleaning
+→ Deduplication
+→ Groq Llama 3.3 70B
+→ Financial Sentiment Analysis
+
+The system generates:
+
+- Latest Headlines
+- AI Summary
+- Bullish / Bearish / Neutral Sentiment
+- Confidence Score
+- Risk Factors
+- Overall Market Impact
+
+---
+
+### 💬 AI Stock Assistant
+
+Integrated chatbot capable of answering questions related to:
+
+- Technical indicators
+- EMA crossover strategy
+- Predictions
+- Backtesting
+- Market concepts
+- Stock analysis
+
+---
+
+### 📈 AI Chart Explanation
+
+Generate natural language explanations directly from price charts.
+
+The model analyzes:
+
+- EMA crossover
+- Trend
+- RSI
+- Price movement
+- Momentum
+
+and produces an investor-friendly explanation.
+
+---
+
+### 📉 Historical Backtesting
+
+Evaluate strategy performance using historical data.
+
+Metrics include:
+
+- Trade History
+- Win Rate
+- Final Portfolio Value
+- Profit Factor
+- Risk Reward Ratio
+- Average Profit
+- Average Loss
+- Maximum Drawdown
+- Maximum Gain
+- Maximum Loss
+- Total PnL
+
+---
+
+### 🔍 Universe Screening
+
+Screen all supported NSE stocks based on:
+
+- EMA crossover
+- Technical indicators
+- ML prediction
+
+Identify bullish opportunities across the market.
+
+---
+
+### 📊 Universe Backtesting
+
+Run historical crossover strategy on multiple stocks simultaneously and compare performance across the universe.
+
+---
+
+### 📱 Modern Dashboard
+
+Interactive dashboard built with React featuring:
+
+- Stock Search
+- Quick Access Stocks
+- Live Technical Indicators
+- ML Prediction Card
+- AI Daily Summary
+- News Intelligence Panel
+- Interactive Charts
+- Performance Dashboard
+- AI Chatbot
+
+---
+
+# 🏗️ Project Architecture
 
 ```
-AlphaCross/
-├── backend/
-│   ├── main.py                  # FastAPI app — all API endpoints (run from repo root)
-│   ├── requirements.txt
-│   ├── data/
-│   │   └── nifty500.csv         # Local backup of official Nifty 500 constituents
-│   ├── ml/
-│   │   ├── data_fetch.py        # yfinance fetch with retry logic
-│   │   ├── features.py          # EMA 20/50, RSI, slopes, returns, volatility, signal labels
-│   │   ├── engine.py            # StrategyEngine — SMA/EMA/WMA, single/double/triple crossover signal generation
-│   │   ├── model_xgb.py         # XGBoost training + prediction (handles binary/multi-class edge cases)
-│   │   ├── backtest.py          # run_advanced_backtest — single-position engine w/ SL/TP/max-hold/priority exits
-│   │   ├── nse500_fetcher.py    # Hybrid loader: online official fetch + automatic local CSV fallback
-│   │   ├── stocks_list.py       # Static curated list of popular NSE stocks (used for quick lookups)
-│   │   └── universe_screen.py   # Threaded EMA-based bullish/bearish/neutral screener helper
-│   └── ai/
-│       └── chat.py              # GPT-4-Turbo / GPT-3.5 / Gemini chat, chart explanations, summaries, sentiment
+                ┌────────────────────┐
+                │ React Frontend     │
+                └─────────┬──────────┘
+                          │
+                          ▼
+                 FastAPI Backend
+                          │
+     ┌──────────┬─────────┼──────────┬─────────┐
+     ▼          ▼         ▼          ▼         ▼
+ Market Data  ML Model  News AI   Backtesting  Chatbot
+     │          │         │          │
+     ▼          ▼         ▼          ▼
+ Yahoo      XGBoost     Groq      Strategy
+ Finance      +          LLM      Evaluation
+            SHAP
+```
+
+---
+
+# 🧠 AI Pipeline
+
+```
+Select Stock
+      │
+      ▼
+Fetch Historical Market Data
+      │
+      ▼
+Feature Engineering
+      │
+      ▼
+XGBoost Prediction
+      │
+      ▼
+SHAP Explainability
+      │
+      ▼
+News Intelligence
+      │
+      ▼
+Groq Financial Analysis
+      │
+      ▼
+Dashboard Visualization
+```
+
+---
+
+# ⚙️ Tech Stack
+
+## Frontend
+
+- React.js
+- Tailwind CSS
+- Axios
+- Chart.js
+
+---
+
+## Backend
+
+- FastAPI
+- Python
+- Pandas
+- NumPy
+
+---
+
+## Machine Learning
+
+- XGBoost
+- Scikit-Learn
+- Feature Engineering
+
+---
+
+## Explainable AI
+
+- SHAP
+
+---
+
+## NLP & LLM
+
+- Groq API
+- Llama 3.3 70B Versatile
+- Prompt Engineering
+
+---
+
+## Data Sources
+
+- Yahoo Finance
+- NewsData.io
+
+---
+
+## APIs Used
+
+- Yahoo Finance API
+- NewsData API
+- Groq API
+
+---
+
+# 📂 Project Structure
+
+## 📂 Project Structure
+
+```text
+AlphaCross
 │
-└── frontend/
-    ├── public/
-    │   └── index.html
-    ├── src/
-    │   ├── api/
-    │   │   └── api.js           # Axios client for all backend endpoints
-    │   ├── components/
-    │   │   ├── ChartDisplay.jsx
-    │   │   ├── Chatbot.jsx
-    │   │   ├── Loader.jsx
-    │   │   ├── PerformanceTable.jsx
-    │   │   ├── PredictionCard.jsx
-    │   │   ├── StockSelector.jsx
-    │   │   ├── SummaryCard.jsx
-    │   │   └── TopMovers.jsx
-    │   ├── pages/
-    │   │   ├── Dashboard.jsx              # Single-stock view
-    │   │   ├── ScreeningResults.jsx       # NSE 500 Screener view
-    │   │   └── UniverseBacktestDashboard.jsx  # Universe Backtest view
-    │   ├── App.jsx
-    │   ├── index.js
-    │   └── index.css
-    └── package.json
+├── backend
+│   ├── main.py
+│   ├── test_backend.py
+│   ├── __init__.py
+│   │
+│   ├── ai
+│   │   ├── chat.py
+│   │   └── __init__.py
+│   │
+│   ├── data
+│   │   └── nifty500.csv
+│   │
+│   ├── ml
+│   │   ├── backtest.py
+│   │   ├── data_fetch.py
+│   │   ├── engine.py
+│   │   ├── explain.py
+│   │   ├── features.py
+│   │   ├── model_xgb.py
+│   │   ├── nse500_fetcher.py
+│   │   ├── stocks_list.py
+│   │   ├── universe_backtest.py
+│   │   ├── universe_screen.py
+│   │   ├── utils.py
+│   │   └── __init__.py
+│   │
+│   └── news
+│       ├── news_service.py
+│       └── __init__.py
+│
+├── frontend
+│   ├── public
+│   │   └── index.html
+│   │
+│   ├── src
+│   │   ├── api
+│   │   │   └── api.js
+│   │   │
+│   │   ├── components
+│   │   │   ├── ChartDisplay.jsx
+│   │   │   ├── Chatbot.jsx
+│   │   │   ├── Loader.jsx
+│   │   │   ├── NewsCard.jsx
+│   │   │   ├── PerformanceTable.jsx
+│   │   │   ├── PredictionCard.jsx
+│   │   │   ├── StockSelector.jsx
+│   │   │   ├── SummaryCard.jsx
+│   │   │   └── TopMovers.jsx
+│   │   │
+│   │   ├── pages
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── ScreeningResults.jsx
+│   │   │   └── UniverseBacktestDashboard.jsx
+│   │   │
+│   │   ├── App.js
+│   │   ├── App.css
+│   │   ├── index.js
+│   │   └── index.css
+│   │
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── postcss.config.js
+│
+├── requirements.txt
+├── .env
+├── .gitignore
+└── README.md
 ```
-
-> **Note on imports:** `backend/main.py` imports its ML modules as `from backend.ml.data_fetch import ...` (i.e. as the `backend` package). This means the server must be started from the **repository root**, not from inside `backend/` - see run instructions below.
 
 ---
 
-## Getting Started
+# 🚀 Installation
 
-### Prerequisites
+## Clone Repository
 
-- Python 3.11+
-- Node.js 16+
-- npm
-
-### Backend Setup
-
-1. From the **repository root** (the folder that contains `backend/`), install dependencies:
 ```bash
-pip install -r backend/requirements.txt
+git clone https://github.com/yourusername/AlphaCross.git
+
+cd AlphaCross
 ```
 
-2. (Optional) Set environment variables for the AI chatbot — either export them or put them in a `.env` file loaded by your shell/process manager:
-```bash
-OPENAI_API_KEY=your_openai_key      # enables GPT-4-Turbo (falls back to GPT-3.5 automatically)
-GEMINI_API_KEY=your_gemini_key      # used only if OPENAI_API_KEY is not set
-```
-If neither key is set, the chatbot automatically falls back to rule-based responses — no API key is required to run the app.
+---
 
-3. Run the server **from the repository root** (important, due to the `backend.ml.*` import style):
+## Backend
+
 ```bash
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+pip install -r requirements.txt
 ```
 
-The API will be available at `http://localhost:8000`, with interactive docs at `http://localhost:8000/docs`.
+Run backend
 
-### Frontend Setup
+```bash
+uvicorn backend.main:app --reload
+```
 
-1. Navigate to the frontend directory:
+---
+
+## Frontend
+
 ```bash
 cd frontend
+
 npm install
-```
 
-2. Point the frontend at your backend (create `frontend/.env` if it doesn't exist):
-```bash
-REACT_APP_API_URL=http://localhost:8000
-```
-
-3. Start the dev server:
-```bash
 npm start
 ```
 
-The app opens at `http://localhost:3000`.
-
 ---
 
-## API Reference
+# 🔑 Environment Variables
 
-All endpoints are served from `backend/main.py`.
+Create a `.env` file.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/` | GET | Health check |
-| `/ping` | GET | Simple liveness probe |
-| `/data/{symbol}` | GET | Latest close, EMA 20, EMA 50, RSI for a symbol |
-| `/chart/{symbol}` | GET | 6-month historical series (close, EMA 20/50, RSI, volume) for charting |
-| `/predict/{symbol}` | GET | Rule-based Bullish/Bearish/Neutral signal with a confidence score derived from EMA slope |
-| `/backtest/{symbol}` | GET | Single-stock EMA-crossover backtest (1-year lookback) with trade logs and summary stats |
-| `/stocks` | GET | First 50 symbols from the NSE 500 list |
-| `/stocks/search?q=` | GET | Search NSE 500 symbols by ticker or industry |
-| `/summary/{symbol}` | GET | Plain-language trend/RSI summary for a symbol |
-| `/sentiment/{symbol}` | GET | Sentiment placeholder (simulated; swap in a real news API) |
-| `/top-movers` | GET | Top 5 gainers and losers from a curated liquid-stock basket (threaded, 5-day window) |
-| `/chat` | POST | AI chatbot — body: `{ symbol, query, context }` |
-| `/nse500/status` | GET | Metadata about the currently loaded Nifty 500 list (source, count, sample) |
-| `/nse500/list` | GET | Full Nifty 500 symbol + industry list |
-| `/screen/universe` | POST | Screen the NSE 500 (or a subset via `max_stocks`) into bullish/bearish/neutral buckets |
-| `/backtest/universe` | POST | Portfolio-level backtest across the NSE 500 with configurable capital, position sizing, stop loss, and take profit |
-
-### `POST /screen/universe` — request body
-```json
-{ "max_stocks": 500 }
-```
-
-### `POST /backtest/universe` — request body
-```json
-{
-  "max_stocks": 50,
-  "initial_capital": 100000,
-  "position_size": 0.1,
-  "stop_loss": 0.05,
-  "take_profit": 0.15
-}
-```
-
-**Response (abridged):**
-```json
-{
-  "status": "success",
-  "total_trades": 49,
-  "win_rate": 28.57,
-  "total_return": 2.28,
-  "final_capital": 102280.45,
-  "stocks_tested": 50,
-  "best_trade": { "symbol": "ADANIENT", "profit_pct": 21.68 },
-  "worst_trade": { "symbol": "ANANTRAJ", "profit_pct": -9.74 },
-  "top_sectors": [
-    { "sector": "Consumer Durables", "avg_return": 20.66, "trades": 3 }
-  ],
-  "trade_details": [ { "symbol": "ADANIENT", "entry_date": "2026-04-20", "exit_date": "2026-05-14", "profit_pct": 21.68 } ]
-}
-```
-
-### `POST /chat` — request body
-```json
-{
-  "symbol": "INFY",
-  "query": "Why is INFY predicted bullish?",
-  "context": {
-    "prediction": "BULLISH",
-    "confidence": 0.85,
-    "ema20": 1445.20,
-    "ema50": 1430.80,
-    "rsi": 62.4
-  }
-}
+```env
+GROQ_API_KEY=YOUR_GROQ_API_KEY
+NEWSDATA_API_KEY=YOUR_NEWSDATA_API_KEY
 ```
 
 ---
 
-## AI Chatbot
+# 📊 Machine Learning Features
 
-Located in `backend/ai/chat.py`. Provider priority:
+The prediction model uses engineered features including:
 
-1. **OpenAI GPT-4-Turbo** (falls back to `gpt-4-1106-preview`, then GPT-3.5, on error) — remembers conversation history, gives context-aware answers, and includes risk disclaimers for buy/sell questions.
-2. **Google Gemini** (`gemini-pro`) used if no OpenAI key is present.
-3. **Rule-based fallback** — pattern-matches greetings, "why", "what is", "should I buy/sell", and prediction questions using live EMA/RSI context. Requires no API key.
-
-Also included: `explain_chart()` for natural-language chart trend summaries and `generate_stock_summary()` for 2-line daily summaries, both with the same GPT → fallback pattern.
-
----
-
-## Signal & Model Details
-
-### Screening / Prediction Signal
-- **Bullish**: EMA 20 > EMA 50
-- **Bearish**: EMA 20 < EMA 50
-- **Neutral**: EMAs equal (rare)
-
-`/predict/{symbol}` additionally checks the EMA 20 slope direction to assign a confidence score (capped at 0.85).
-
-### Backtest Strategy (single-stock and universe)
-- **Entry**: EMA 20 crosses above EMA 50
-- **Exit**: EMA 20 crosses below EMA 50, OR stop loss / take profit hit (universe backtest only)
-- Universe backtest simulates fixed **position sizing** (% of capital per trade) rather than full capital per trade.
-
-### Features Used (`ml/features.py`)
-- `EMA_20`, `EMA_50`
-- `EMA_20_slope`, `EMA_50_slope` (3-day rate of change)
-- `RSI` (14-period)
-- `Returns` (daily % change)
-- `Volatility` (10-day rolling std dev)
-
-### ML Model (`ml/model_xgb.py`)
-- **Algorithm**: XGBoost Classifier (50 estimators, max_depth=3, learning_rate=0.1)
-- Automatically detects class imbalance/insufficient diversity in training labels and falls back to using the current `Signal` column, or a simple EMA-comparison rule, to avoid training failures on short histories.
-- Handles both 2-class and 3-class (Bullish/Neutral/Bearish) scenarios with correct label remapping.
-
-### Data Sources
-
-**Live Market Data**
-- Yahoo Finance (`yfinance`)
-- Automatic retry logic (3 attempts) on transient failures or missing OHLCV columns, with `.NS` suffix auto-appended
-- Live OHLCV prices power indicators, screening, predictions, and backtesting
-
-**NSE 500 Constituents**
-- Primary source: Official Nifty Indices CSV (fetched live from `niftyindices.com`)
-- Cached in memory (`ml/nse500_fetcher.py`)
-- Automatic fallback to `backend/data/nifty500.csv` if the online source is unavailable
-- Emergency 4-stock fallback only if both online and local sources fail
+- EMA 20
+- EMA 50
+- EMA 20 Slope
+- EMA 50 Slope
+- RSI
+- Daily Returns
+- Historical Volatility
 
 ---
 
-## Frontend Views
+# 📈 Prediction Labels
 
-| View | File | Description |
-|---|---|---|
-| Single Stock | `pages/Dashboard.jsx` | Stock selector, prediction card, chart, performance table, AI summary, chatbot |
-| NSE 500 Screener | `pages/ScreeningResults.jsx` | Full-universe bullish/bearish/neutral scan with sector tags, filters, and search |
-| Universe Backtest | `pages/UniverseBacktestDashboard.jsx` | Configurable portfolio backtest across the NSE 500 with sector and trade-level breakdowns |
+The model predicts one of three classes:
 
-Shared components live in `frontend/src/components/`: `ChartDisplay`, `Chatbot`, `Loader`, `PerformanceTable`, `PredictionCard`, `StockSelector`, `SummaryCard`, `TopMovers`.
-
-All API calls are centralized in `frontend/src/api/api.js`.
+| Label | Meaning |
+|--------|----------|
+| 🟢 Bullish | Upward momentum expected |
+| 🔴 Bearish | Downward momentum expected |
+| ⚪ Neutral | No strong directional signal |
 
 ---
 
-## Deployment
+# 🧠 Explainable AI
 
-### Backend (Render / Railway / HuggingFace Spaces)
-- **Build command**: `pip install -r backend/requirements.txt`
-- **Start command** (must run from repo root so `backend.*` imports resolve):
-```bash
-uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+Instead of producing a prediction alone, AlphaCross explains *why* the prediction was made.
+
+SHAP highlights the most influential indicators contributing to the model's decision, improving transparency and interpretability.
+
+---
+
+# 📰 News Intelligence Workflow
+
 ```
-- Set `OPENAI_API_KEY` and/or `GEMINI_API_KEY` as environment variables if you want the AI chatbot beyond rule-based fallback.
-
-#### Production Reliability
-
-The backend first attempts to download the latest official Nifty 500 constituent list. If that fails, it transparently loads the bundled `backend/data/nifty500.csv`, ensuring Render deployments continue to screen the full NSE 500 universe. Live market prices are still fetched in real time from Yahoo Finance.
-
-### Frontend (Vercel / Netlify)
-- **Build command**: `npm install && npm run build`
-- Set `REACT_APP_API_URL` to your deployed backend URL.
-
----
-
-## Tech Stack
-
-**Backend:** FastAPI, XGBoost, scikit-learn, pandas, numpy, yfinance, `ta`, OpenAI SDK, `google-generativeai`, `requests`, `python-dotenv`
-
-**Frontend:** React 18, React Router, TailwindCSS, Chart.js / react-chartjs-2, Axios, lucide-react
-
----
-
-## Disclaimer
-
-This tool is for educational and research purposes only. It does not constitute financial advice. Always do your own research before making trading decisions.
+NewsData API
+        │
+        ▼
+Recent Articles
+        │
+        ▼
+Cleaning & Deduplication
+        │
+        ▼
+Groq Llama 3.3
+        │
+        ▼
+Financial NLP
+        │
+        ▼
+Sentiment + Risks + Summary
+```
 
 ---
 
-## License
+# 📊 Dashboard Modules
 
-MIT License — free to use and modify.
+- Stock Selector
+- Technical Indicators
+- ML Prediction
+- Interactive Price Chart
+- AI Chart Explanation
+- AI Daily Summary
+- News Intelligence
+- Historical Backtesting
+- Universe Screening
+- AI Chatbot
+
+---
+
+# 💡 Future Improvements
+
+- Portfolio Optimization
+- Multi-Timeframe Analysis
+- Real-Time Streaming Data
+- Fundamental Analysis Integration
+- Reinforcement Learning Strategies
+- Paper Trading
+- Portfolio Risk Analytics
+
+---
+
+# 👨‍💻 Developed By
+
+**Jash Ladhani**
+**Aaryan Lunis**
+
+B.Tech Computer Engineering
+
+AI • Machine Learning • Financial Analytics • Explainable AI • NLP
+
+---
+
+## ⭐ If you found this project interesting, consider giving it a star!

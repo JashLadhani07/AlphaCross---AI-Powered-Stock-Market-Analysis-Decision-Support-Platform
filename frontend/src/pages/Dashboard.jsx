@@ -4,6 +4,7 @@ import ChartDisplay from '../components/ChartDisplay';
 import PredictionCard from '../components/PredictionCard';
 import PerformanceTable from '../components/PerformanceTable';
 import SummaryCard from '../components/SummaryCard';
+import NewsCard from '../components/NewsCard';
 import TopMovers from '../components/TopMovers';
 import Chatbot from '../components/Chatbot';
 import Loader from '../components/Loader';
@@ -20,6 +21,7 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState(null);
+  const [news, setNews] = useState(null);
 
   useEffect(() => {
     loadAllData();
@@ -30,17 +32,19 @@ const Dashboard = () => {
     setError(null);
 
     try {
-      const [data, pred, back, chart] = await Promise.all([
+      const [data, pred, back, chart, newsData] = await Promise.all([
         api.getStockData(selectedStock),
         api.getPrediction(selectedStock),
         api.getBacktest(selectedStock),
-        api.getChartData(selectedStock)
+        api.getChartData(selectedStock),
+        api.getNewsIntelligence(selectedStock)
       ]);
 
       setStockData(data);
       setPrediction(pred);
       setBacktest(back);
       setChartData(chart);
+      setNews(newsData);
       
       // Calculate quick stats
       if (back && back.summary) {
@@ -196,9 +200,14 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* AI Summary Card */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <SummaryCard symbol={selectedStock} />
+        {/* AI Summary + News Intelligence */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <SummaryCard symbol={selectedStock} />
+          </div>
+          <div className="animate-fade-in" style={{ animationDelay: '0.55s' }}>
+            <NewsCard symbol={selectedStock} preloadedNews={news} />
+          </div>
         </div>
 
         {/* Top Movers Screener */}
@@ -243,7 +252,14 @@ const Dashboard = () => {
       {/* Chatbot */}
       <Chatbot 
         symbol={selectedStock} 
-        predictionContext={prediction}
+        predictionContext={{
+          ...prediction,
+          top_factors: prediction?.explainability?.top_factors,
+          news_summary: news?.available ? news.summary : null,
+          news_risks: news?.available ? news.risks : null,
+          sentiment: news?.available ? news.sentiment : null,
+          backtest_win_rate: backtest?.summary?.win_rate_pct
+        }}
         apiBase={process.env.REACT_APP_API_URL || 'http://localhost:8000'}
       />
 

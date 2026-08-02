@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
+import { Zap, TrendingUp, TrendingDown, Minus, Info, Brain, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const PredictionCard = ({ prediction, symbol }) => {
   if (!prediction) {
@@ -181,6 +181,34 @@ const PredictionCard = ({ prediction, symbol }) => {
           </div>
         </div>
       </div>
+
+      {/* Explainable AI: Top Contributing Factors */}
+      {prediction.explainability?.top_factors?.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-gray-700">
+          <div className="flex items-center gap-2 mb-3">
+            <Brain className="w-4 h-4 text-purple-400" />
+            <span className="text-sm font-semibold text-gray-300">Why this prediction?</span>
+          </div>
+          <div className="space-y-2">
+            {prediction.explainability.top_factors.map((factor, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-gray-400">
+                  {factor.direction === 'positive' ? (
+                    <ArrowUpRight className="w-3.5 h-3.5 text-green-400" />
+                  ) : (
+                    <ArrowDownRight className="w-3.5 h-3.5 text-red-400" />
+                  )}
+                  <span>{factor.feature}</span>
+                </div>
+                <span className={factor.direction === 'positive' ? 'text-green-400' : 'text-red-400'}>
+                  {factor.direction === 'positive' ? '+' : ''}{factor.impact}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-500 mt-2">SHAP feature attribution • XGBoost</p>
+        </div>
+      )}
 
       {/* Signal Badge */}
       <div className="mt-6 text-center">

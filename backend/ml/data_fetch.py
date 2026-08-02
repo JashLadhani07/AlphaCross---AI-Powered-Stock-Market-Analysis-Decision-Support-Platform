@@ -1,6 +1,8 @@
 import yfinance as yf
 import pandas as pd
 import time
+import contextlib
+import io
 
 def fetch_stock_data(symbol: str, period: str = "1y", retries: int = 3) -> pd.DataFrame:
     """
@@ -11,8 +13,9 @@ def fetch_stock_data(symbol: str, period: str = "1y", retries: int = 3) -> pd.Da
     for attempt in range(retries):
         try:
             # Use Ticker object instead of download for better reliability
-            stock = yf.Ticker(ticker)
-            df = stock.history(period=period)
+            with contextlib.redirect_stderr(io.StringIO()):
+                 stock = yf.Ticker(ticker)
+                 df = stock.history(period=period)
             
             if df is None or df.empty:
                 if attempt < retries - 1:

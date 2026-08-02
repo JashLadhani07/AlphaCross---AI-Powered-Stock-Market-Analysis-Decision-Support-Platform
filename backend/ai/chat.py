@@ -1,10 +1,28 @@
 import os
 from typing import Dict, List, Optional, Any
 
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+ANALYST_SYSTEM_PROMPT = """You are AlphaCross AI, an institutional-grade trading research assistant.
+
+Rules you must always follow:
+- Always ground your answer in the project data provided in the context (price, EMA 20/50, RSI, ML prediction, backtest stats, news sentiment) rather than general knowledge.
+- Explain technical indicators, ML predictions, backtests, and news context clearly and naturally.
+- Never invent prices, signals, news, or data points that are not present in the context. If information is unavailable, say so plainly.
+- For "should I buy/sell" style questions, give balanced, educational analysis and always include a brief risk disclaimer. Never give direct financial advice.
+- Remember prior turns in the conversation and refer back to them naturally (e.g. if the user pivots from one stock to comparing it with another).
+- Keep responses conversational and concise (typically 2-5 sentences), adapting tone to the user's intent (casual, technical, or educational)."""
+
+
 def get_chat_response(symbol: str, query: str, context: Dict, conversation_history: Optional[List[Dict]] = None) -> str:
-    """Generate chatbot response using GPT-4-Turbo with conversation history"""
-    
-    # Try OpenAI GPT-4-Turbo first
+    """Generate chatbot response. Provider priority: Groq -> OpenAI GPT-4-Turbo -> Gemini -> rule-based fallback."""
+
+    # Try Groq first (primary LLM for AlphaCross AI Analyst - fast + free-tier friendly)
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        return get_groq_response(symbol, query, context, groq_key, conversation_history)
+
+    # Try OpenAI GPT-4-Turbo
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
         return get_openai_response(symbol, query, context, openai_key, conversation_history)
@@ -16,6 +34,53 @@ def get_chat_response(symbol: str, query: str, context: Dict, conversation_histo
     
     # Fallback to improved rule-based responses
     return get_fallback_response(symbol, query, context)
+
+
+def get_groq_response(symbol: str, query: str, context: Dict, api_key: str, conversation_history: Optional[List[Dict]] = None) -> str:
+    """Use Groq (Llama 3.3 70B) as the AlphaCross AI Analyst, with conversation history."""
+    try:
+        from groq import Groq
+        client = Groq(api_key=api_key)
+
+        context_str = build_context_string(symbol, context)
+
+        messages = [{"role": "system", "content": ANALYST_SYSTEM_PROMPT}]
+
+        if conversation_history:
+            for msg in conversation_history[-10:]:  # keep last 10 turns for context
+                role = msg.get("role")
+                content = msg.get("content")
+                if role and content:
+                    # Normalize any "ai" role from the frontend to "assistant" for the API
+                    messages.append({"role": "assistant" if role == "ai" else role, "content": content})
+
+        user_prompt = f"""Current data for {symbol}:
+{context_str}
+
+User's question: {query}
+
+Answer using only the data above. If this relates to something asked earlier in the conversation, reference it naturally."""
+
+        messages.append({"role": "user", "content": user_prompt})
+
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=messages,
+            max_tokens=350,
+            temperature=0.6,
+        )
+
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Groq API error: {e}")
+        # Fall through the rest of the provider chain rather than failing the request
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            return get_openai_response(symbol, query, context, openai_key, conversation_history)
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if gemini_key:
+            return get_gemini_response(symbol, query, context, gemini_key, conversation_history)
+        return get_fallback_response(symbol, query, context)
 
 def get_openai_response(symbol: str, query: str, context: Dict, api_key: str, conversation_history: Optional[List[Dict]] = None) -> str:
     """Use OpenAI GPT-4-Turbo with conversation history"""
@@ -188,7 +253,29 @@ def build_context_string(symbol: str, context: Dict) -> str:
     
     if context.get('sentiment'):
         parts.append(f"News Sentiment: {context.get('sentiment')}")
-    
+
+    if context.get('news_summary'):
+        parts.append(f"News Summary: {context.get('news_summary')}")
+
+    if context.get('news_risks'):
+        risks = context.get('news_risks')
+        risks_str = "; ".join(risks) if isinstance(risks, list) else str(risks)
+        if risks_str:
+            parts.append(f"News Risk Factors: {risks_str}")
+
+    if context.get('top_factors'):
+        factors = context.get('top_factors')
+        try:
+            factors_str = "; ".join(
+                f"{f.get('feature')} ({f.get('direction')}, impact {f.get('impact')})" for f in factors
+            )
+            parts.append(f"Top ML Prediction Factors: {factors_str}")
+        except Exception:
+            pass
+
+    if context.get('backtest_win_rate') is not None:
+        parts.append(f"Backtest Win Rate: {context.get('backtest_win_rate')}%")
+
     return ", ".join(parts)
 
 def explain_chart(symbol: str, chart_data: List[Dict], context: Dict) -> str:

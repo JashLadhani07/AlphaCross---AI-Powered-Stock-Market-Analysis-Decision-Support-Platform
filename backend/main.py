@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, List
@@ -9,6 +10,17 @@ import pandas as pd
 from backend.ml.data_fetch import fetch_stock_data
 from backend.ml.features import calculate_features
 from backend.ml.nse500_fetcher import fetch_nse500_symbols, get_nse500_status
+from backend.ml.explain import predict_with_explanation
+from backend.news.news_service import get_news_intelligence
+from backend.ai.chat import get_chat_response
+from fastapi import Body
+from groq import Groq
+
+from dotenv import load_dotenv
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BASE_DIR / ".env")
 
 # =====================================
 
@@ -127,8 +139,15 @@ def get_prediction(symbol: str):
         else:
             prediction = "NEUTRAL"
             confidence = 0.5
-        
-        return {
+
+        # Explainable AI: attribute the prediction to top contributing
+        # factors using an XGBoost + SHAP model trained on this stock's
+        # recent history. Returns None (and is simply omitted) if SHAP
+        # isn't installed or there isn't enough data - never blocks the
+        # base prediction above.
+        explainability = predict_with_explanation(df)
+
+        response = {
             "symbol": symbol,
             "prediction": prediction,
             "confidence": round(confidence, 2),
@@ -136,6 +155,11 @@ def get_prediction(symbol: str):
             "ema_50": round(ema_50, 2),
             "rsi": round(safe_float(latest["RSI"]), 2)
         }
+
+        if explainability:
+            response["explainability"] = explainability
+
+        return response
     except HTTPException:
         raise
     except Exception as e:
@@ -443,17 +467,49 @@ def get_top_movers():
 # ---------- CHAT ----------
 @app.post("/chat")
 def chat(request: Dict[str, Any]):
-    """Simple chat endpoint"""
+    """AlphaCross AI Analyst - Groq (primary) / OpenAI / Gemini / rule-based fallback,
+    with conversation memory and project-data grounding (technicals + news + explainability)."""
     symbol = request.get("symbol", "")
     query = request.get("query", "")
-    
-    response = f"I understand you're asking about {symbol}: '{query}'. "
-    response += "This is a placeholder response. Full AI chat functionality coming soon!"
-    
+    context = request.get("context", {}) or {}
+    conversation_history = request.get("conversation_history", [])
+
+    try:
+        response_text = get_chat_response(symbol, query, context, conversation_history)
+    except Exception as e:
+        print(f"Error in /chat for {symbol}: {str(e)}")
+        response_text = (
+            f"I ran into an issue answering that about {symbol}. "
+            "Please try rephrasing your question."
+        )
+
     return {
-        "response": response,
+        "response": response_text,
         "symbol": symbol
     }
+
+# ---------- NEWS INTELLIGENCE ----------
+@app.get("/news/{symbol}")
+def get_news(symbol: str):
+    """AI-generated news briefing: headlines, sentiment, summary, and risk factors.
+
+    Requires FINNHUB_API_KEY (headline retrieval) and GROQ_API_KEY (AI summary/sentiment).
+    Degrades gracefully - returns available=False with a helpful message if unset."""
+    try:
+        return get_news_intelligence(symbol)
+    except Exception as e:
+        print(f"Error in /news for {symbol}: {str(e)}")
+        return {
+            "symbol": symbol,
+            "available": False,
+            "headlines": [],
+            "sentiment": "Neutral",
+            "confidence": 0,
+            "summary": "",
+            "risks": [],
+            "impact": "",
+            "message": f"Error fetching news: {str(e)}"
+        }
 
 # ---------- NSE 500 ----------
 @app.get("/nse500/status")
@@ -463,6 +519,91 @@ def nse500_status():
 @app.get("/nse500/list")
 def nse500_list():
     return {"stocks": fetch_nse500_symbols()}
+
+# Chart Explanation
+# ---------- CHART EXPLANATION ----------
+@app.post("/explain-chart")
+def explain_chart(request: Dict[str, Any] = Body(...)):
+    """
+    Explain EMA crossover chart using Groq.
+    """
+
+    try:
+        symbol = request.get("symbol", "")
+        chart_data = request.get("chart_data", [])
+
+        if not chart_data:
+            raise HTTPException(status_code=400, detail="No chart data provided.")
+
+        latest = chart_data[-1]
+
+        # Last 20 candles are enough
+        recent = chart_data[-20:]
+
+        chart_text = ""
+
+        for row in recent:
+            chart_text += (
+                f"Date: {row['date']}, "
+                f"Close: {row['close']}, "
+                f"EMA20: {row['ema_20']}, "
+                f"EMA50: {row['ema_50']}, "
+                f"RSI: {row['rsi']}\n"
+            )
+
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+        prompt = f"""
+You are a professional technical analyst.
+
+Stock: {symbol}
+
+Recent market data:
+
+{chart_text}
+
+Analyze ONLY from this data.
+
+Explain in 5-6 concise sentences:
+
+- Current trend
+- EMA crossover meaning
+- RSI condition
+- Momentum strength
+- Important support/resistance observations if visible
+- Short-term outlook
+
+Keep it easy for retail investors.
+Do NOT invent prices or news.
+"""
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert stock market technical analyst."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.3,
+            max_tokens=250
+        )
+
+        explanation = response.choices[0].message.content.strip()
+
+        return {
+            "symbol": symbol,
+            "explanation": explanation
+        }
+
+    except Exception as e:
+        print(f"Chart explanation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ---------- UNIVERSE SCREEN ----------
 @app.post("/screen/universe")
