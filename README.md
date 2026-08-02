@@ -1,4 +1,4 @@
-# 📈 AlphaCross – AI-Powered Stock Market Analysis & Decision Support Platform
+# 📈 AlphaCross - AI-Powered Stock Market Analysis & Decision Support Platform
 
 AlphaCross is an AI-powered stock analysis platform that combines **technical analysis, machine learning, explainable AI, financial news intelligence, NLP, and conversational AI** to help investors make more informed trading decisions.
 
