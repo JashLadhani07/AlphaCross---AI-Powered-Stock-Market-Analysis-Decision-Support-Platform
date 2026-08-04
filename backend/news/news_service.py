@@ -95,11 +95,11 @@ def fetch_headlines(symbol: str, max_articles: int = 10) -> List[Dict[str, str]]
 
         return [
             {
-                "title": article.get("title", "").strip(),
+                "title": (article.get("title") or "").strip(),
                 "url": article.get("link", ""),
                 "source": article.get("source_name", "Unknown"),
                 "published_at": article.get("pubDate", ""),
-                "summary": article.get("description", "").strip(),
+                "summary": (article.get("description") or "").strip(),
             }
             for article in articles[:max_articles]
             if article.get("title")
