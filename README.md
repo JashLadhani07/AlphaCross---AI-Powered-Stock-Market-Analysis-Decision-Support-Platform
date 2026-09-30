@@ -1,5 +1,7 @@
 # 📈 AlphaCross - AI-Powered Stock Market Analysis & Decision Support Platform
 
+🔗 **Live Demo:** https://alpha-cross-an-ai-powered-moving-av.vercel.app/
+
 AlphaCross is an AI-powered stock analysis platform that combines **technical analysis, machine learning, explainable AI, financial news intelligence, NLP, and conversational AI** to help investors make more informed trading decisions.
 
 Unlike traditional crossover screeners, AlphaCross combines **historical price action**, **technical indicators**, **XGBoost predictions**, **SHAP explanations**, and **AI-generated market insights** into a single interactive dashboard supporting **500 NSE-listed companies**.
