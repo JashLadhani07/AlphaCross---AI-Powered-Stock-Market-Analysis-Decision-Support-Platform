@@ -203,6 +203,23 @@ export const api = {
         message: 'Unable to reach news service.'
       };
     }
+  },
+
+  // =====================
+  // CHART EXPLANATION (POST /explain-chart, unchanged endpoint)
+  // =====================
+  explainChart: async (symbol, chartData, context = {}) => {
+    try {
+      const response = await axios.post(`${API_URL}/explain-chart`, {
+        symbol,
+        chart_data: chartData,
+        context
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error explaining chart:', error);
+      throw error;
+    }
   }
 };
 
